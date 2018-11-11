@@ -55,8 +55,12 @@ void notExamMode() {
   if (!led1x1 & !led1x2)
     led1x1 = student1x2;
   if (!led2x1 & !led2x2) {
-    led1x1 = led1x1 | student2x2;
-    led2x1 = student2x2;
+    if(led1x2) {
+      led2x2 = student2x2;
+    } else {
+      led1x1 = led1x1 | student2x2;
+      led2x1 = student2x2;
+    }
   }
 
   digitalWrite(led1x1Pin, led1x1);
@@ -67,4 +71,5 @@ void notExamMode() {
 
 void loop() {
   // put your main code here, to run repeatedly:
+  notExamMode();
 }
