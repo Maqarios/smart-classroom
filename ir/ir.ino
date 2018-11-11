@@ -1,21 +1,49 @@
-// Pin Naming Convention: [Name] + [Row] +  x + [Column] + Pin
-int student1x1Pin = 13;
-int student1x2Pin = 12;
-int student1x3Pin = 11;
-int student2x1Pin = 10;
-int student2x2Pin = 9;
-int student2x3Pin = 8;
+#include <Adafruit_GFX.h>
+#include <gfxfont.h>
+#include <Adafruit_SSD1331.h>
+#include <SPI.h>
 
-int led1x1Pin = 7;
-int led1x2Pin = 6;
-int led2x1Pin = 5;
-int led2x2Pin = 4;
+#define sclk 52
+#define mosi 51
+#define cs   47
+#define rst  49
+#define dc   48
+
+// Color definitions
+#define BLACK           0x0000
+#define BLUE            0x001F
+#define RED             0xF800
+#define GREEN           0x07E0
+#define CYAN            0x07FF
+#define MAGENTA         0xF81F
+#define YELLOW          0xFFE0  
+#define WHITE           0xFFFF
+
+Adafruit_SSD1331 display = Adafruit_SSD1331(cs, dc, rst);
+
+// Pin Naming Convention: <Type> + <Row> +  "x" + <Column> + "Pin"
+#define student1x1Pin 46
+#define student1x2Pin 45
+#define student1x3Pin 44
+#define student2x1Pin 43
+#define student2x2Pin 42
+#define student2x3Pin 41
+
+#define led1x1Pin 40
+#define led1x2Pin 39
+#define led2x1Pin 38
+#define led2x2Pin 37
+
+int people = 0;
 
 int student1x1, student1x2, student1x3, student2x1, student2x2, student2x3;
 int led1x1, led1x2, led2x1, led2x2;
 
 void setup() {
   // put your setup code here, to run once:
+
+  display.begin();
+  display.fillScreen(BLACK);
 
   pinMode(student1x1Pin, INPUT);
   pinMode(student1x2Pin, INPUT);
@@ -69,7 +97,27 @@ void notExamMode() {
   digitalWrite(led2x2Pin, led2x2);
 }
 
+void displayNotExamMode() {
+  int shift = 46;
+  for(int i = people; i > 0; i /= 10) {
+    shift -= 4;
+  }
+
+  display.setCursor(shift, 0);
+  display.setTextColor(WHITE);
+  display.setTextSize(2);
+  display.print(people);
+
+  display.fillRect(0,27, 8, 8, student1x1 ? RED : BLACK);
+  display.fillRect(46,27, 8, 8, student1x2 ? RED : BLACK);
+  display.fillRect(88,27, 8, 8, student1x3 ? RED : BLACK);
+  display.fillRect(0,48, 8, 8, student2x1 ? RED : BLACK);
+  display.fillRect(46,48, 8, 8, student2x2 ? RED : BLACK);
+  display.fillRect(88,48, 8, 8, student2x3 ? RED : BLACK);
+}
+
 void loop() {
   // put your main code here, to run repeatedly:
   notExamMode();
+  displayNotExamMode();
 }

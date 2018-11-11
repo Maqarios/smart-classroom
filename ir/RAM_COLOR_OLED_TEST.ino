@@ -1,27 +1,8 @@
-#define sclk 13
-#define mosi 11
-#define cs   10
-#define rst  9
-#define dc   8
-
-// Color definitions
-#define  BLACK           0x0000
-#define BLUE            0x001F
-#define RED             0xF800
-#define GREEN           0x07E0
-#define CYAN            0x07FF
-#define MAGENTA         0xF81F
-#define YELLOW          0xFFE0  
-#define WHITE           0xFFFF
-
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1331.h>
-#include <SPI.h>
 
 
-Adafruit_SSD1331 display = Adafruit_SSD1331(cs, dc, rst);
 
-void setup() {
+
+void asd() {
 
   display.begin();
   display.fillScreen(RED);
@@ -53,7 +34,7 @@ void setup() {
   delay(1000);
 }
 
-void loop() 
+void asd2() 
 {
   display.fillRect(10,40, 75, 20, BLACK);
   delay(1000);
@@ -64,4 +45,3 @@ void loop()
   display.print("Welcome :)");
   delay(1000);
 }
-
