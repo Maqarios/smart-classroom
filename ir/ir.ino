@@ -1,14 +1,20 @@
+
+
+#include <timer.h>
+
+
+
+#include <Time.h>
+
 #include <Adafruit_GFX.h>
 #include <gfxfont.h>
 #include <Adafruit_SSD1331.h>
 #include <SPI.h>
-
 #define sclk 52
 #define mosi 51
 #define cs   47
 #define rst  49
 #define dc   48
-
 // Color definitions
 #define BLACK           0x0000
 #define BLUE            0x001F
@@ -20,7 +26,6 @@
 #define WHITE           0xFFFF
 
 Adafruit_SSD1331 display = Adafruit_SSD1331(cs, dc, rst);
-
 // Pin Naming Convention: <Type> + <Row> +  "x" + <Column> + "Pin"
 #define student1x1Pin 46
 #define student1x2Pin 45
@@ -35,16 +40,18 @@ Adafruit_SSD1331 display = Adafruit_SSD1331(cs, dc, rst);
 #define led2x2Pin 37
 
 int people = 0;
-
+auto timer = timer_create_default();
+boolean timer_set=false;
+int duration;
 int student1x1, student1x2, student1x3, student2x1, student2x2, student2x3;
 int led1x1, led1x2, led2x1, led2x2;
 
-void setup() {
+void setup1() {
   // put your setup code here, to run once:
 
   display.begin();
   display.fillScreen(BLACK);
-
+  
   pinMode(student1x1Pin, INPUT);
   pinMode(student1x2Pin, INPUT);
   pinMode(student1x3Pin, INPUT);
@@ -57,6 +64,7 @@ void setup() {
   pinMode(led2x1Pin, OUTPUT);
   pinMode(led2x2Pin, OUTPUT);
 }
+
 
 void notExamMode() {
   student1x1 = !digitalRead(student1x1Pin);
@@ -106,7 +114,7 @@ void displayNotExamMode() {
   display.setCursor(shift, 0);
   display.setTextColor(WHITE);
   display.setTextSize(2);
-  display.print(people);
+  
 
   display.fillRect(0,27, 8, 8, student1x1 ? RED : BLACK);
   display.fillRect(46,27, 8, 8, student1x2 ? RED : BLACK);
@@ -116,8 +124,11 @@ void displayNotExamMode() {
   display.fillRect(88,48, 8, 8, student2x3 ? RED : BLACK);
 }
 
-void loop() {
+void loop1() {
   // put your main code here, to run repeatedly:
   notExamMode();
   displayNotExamMode();
+  if(timer_set){
+  //display time
+  }
 }
