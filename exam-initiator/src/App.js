@@ -1,20 +1,23 @@
 import React, { Component } from 'react';
 import './App.css';
-
+import axios from 'axios';
+const TUNNELED_URL = 'https://embedded-smart-classroom-2019.localtunnel.me';
+const LOCAL_URL = 'http://localhost:8080';
+const API_URL = TUNNELED_URL;
+axios.defaults.headers.post['Access-Control-Allow-Origin'] = '*';
 class App extends Component {
   state = {
     name: 'Admin',
     password: 'password',
     startTime: '13:30',
-    hours: '',
-    minutes: ''
+    hours: 0,
+    minutes: 0
   }
 
 
   handleInputChange = (event) => {
     const target = event.target;
     const value = target.type === 'checkbox' ? target.checked : target.value;
-    console.log(value);
     const name = target.name;
     this.setState((prevState) => {
       return {
@@ -25,7 +28,10 @@ class App extends Component {
   }
 
   submitExam = () => {
-
+    const state = this.state;
+    axios.post(`${API_URL}/exam`,state)
+    .then((res) => console.log(res.body))
+    .catch((error) => console.log(error));
   }
 
   getHoursJSX = () => {
@@ -61,7 +67,7 @@ class App extends Component {
             <div className="col-xs-10 col-sm-10 col-lg-6 align-center">
               <div className="form-wrap">
                 <h1>Add start time of exam and duration, and don't forget to add your credentials ;)</h1>
-                <form id="login-form">
+                <form id="login-form" onSubmit={e => e.preventDefault()}>
                   <div className="form-group">
                     <label htmlFor="name" className="sr-only">Name</label>
                     <input type="name" name="name" id="name" className="form-control" value={this.state.name} onChange={this.handleInputChange} />
@@ -91,7 +97,7 @@ class App extends Component {
                       </div>
                     </div>
                   </div>
-                  <input type="submit" id="btn-login" className="btn btn-custom btn-lg btn-block" value="Start Exam" onClick={this.submitExam} />
+                  <button id="btn-login" className="btn btn-custom btn-lg btn-block" onClick={this.submitExam}>Start Exam</button>
                 </form>
                 <hr />
               </div>
