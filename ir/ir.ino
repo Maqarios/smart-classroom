@@ -1,15 +1,14 @@
 
 
-#include <timer.h>
 
 
-
+#include <TimeLib.h>
 #include <Time.h>
-
 #include <Adafruit_GFX.h>
 #include <gfxfont.h>
 #include <Adafruit_SSD1331.h>
 #include <SPI.h>
+
 #define sclk 52
 #define mosi 51
 #define cs   47
@@ -39,14 +38,29 @@ Adafruit_SSD1331 display = Adafruit_SSD1331(cs, dc, rst);
 #define led2x1Pin 38
 #define led2x2Pin 37
 
+#define buzzer_pin 36
+
 int people = 0;
-auto timer = timer_create_default();
-boolean timer_set=false;
-int duration;
+
 int student1x1, student1x2, student1x3, student2x1, student2x2, student2x3;
+
 int led1x1, led1x2, led2x1, led2x2;
 
-void setup1() {
+int start_hour=13;
+int start_minutes=50;
+int start_seconds=0;
+int current_hour;
+int current_minutes;
+int current_seconds; 
+int duration_hours=0;
+int duration_minutes=0;
+int duration_seconds=5;
+
+bool timer_mode=false;
+bool not_exam_mode=true;
+unsigned long lastTick = 0;
+
+void setup() {
   // put your setup code here, to run once:
 
   display.begin();
@@ -63,6 +77,84 @@ void setup1() {
   pinMode(led1x2Pin, OUTPUT);
   pinMode(led2x1Pin, OUTPUT);
   pinMode(led2x2Pin, OUTPUT);
+
+  pinMode(buzzer_pin, OUTPUT);
+
+  
+  setTime(13,50,00,19,11,2018);
+}
+void display_duration(int hour,int mins,int sec){
+ display.fillScreen(BLACK);
+  display.setCursor(0, 0);
+ display.setTextColor(WHITE);
+ display.setTextSize(2);
+ if(hour<10)
+ display.print(0);
+ display.print(hour);
+ display.print(":");
+  if(mins<10)
+ display.print(0);
+ display.print(mins);
+ display.print(" ");
+ display.setTextSize(1);
+  if(sec<10)
+ display.print(0);
+ display.print(sec); 
+}
+
+void reset_timer_mode(){
+  timer_mode=false;
+    digitalWrite(buzzer_pin, 1);
+    delay(1000);
+    digitalWrite(buzzer_pin, 0);
+  
+}
+
+void exam_mode(){
+    current_hour=hour();
+ current_minutes=minute();
+ current_seconds=second();
+ if(!timer_mode){
+  if(current_hour==start_hour){
+    if(current_minutes==start_minutes){
+      if(current_seconds==start_seconds){
+        timer_mode=true;
+        //timer.in(duration_total_seconds*1000, reset_timer_mode);
+      }
+    }
+  }
+ }else{
+
+  if(duration_seconds>0){
+    if(millis() - lastTick >=1000){
+      lastTick = millis();
+      duration_seconds--;
+      display_duration(duration_hours,duration_minutes,duration_seconds);
+    }
+  }
+  if(duration_minutes>0){
+    if(duration_seconds<=0){
+      duration_minutes--;
+      duration_seconds=60;
+     
+
+    }
+  }
+  if(duration_hours >0){
+    if(duration_minutes<=0){
+      duration_hours--;
+      duration_minutes=60;
+     
+    }
+  }
+
+  if(duration_hours<=0 && duration_minutes<=0 && duration_seconds<=0){
+    
+    reset_timer_mode();
+  
+  }
+ }
+  
 }
 
 
@@ -124,11 +216,11 @@ void displayNotExamMode() {
   display.fillRect(88,48, 8, 8, student2x3 ? RED : BLACK);
 }
 
-void loop1() {
+void loop() {
   // put your main code here, to run repeatedly:
+  
+ 
   notExamMode();
   displayNotExamMode();
-  if(timer_set){
-  //display time
-  }
+
 }
