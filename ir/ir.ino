@@ -40,7 +40,22 @@ Adafruit_SSD1331 display = Adafruit_SSD1331(cs, dc, rst);
 
 #define buzzer_pin 36
 
-int people = 0;
+//--------------DOOR SENSORS VARIABLES-----------------------------------
+int peopleCounter = 0;
+
+int sensorPinIN = A0; 
+int sensorPinOUT = A1; 
+int sensorValueIN = 0; 
+int sensorValueOUT = 0; 
+int counter=0; 
+int distanceSensorIN=0; 
+int distanceSensorOUT=0;
+
+unsigned long timerIN = 0; 
+unsigned long timerOUT = 0;
+
+char buf[100];
+//----------------------------------------------------------------------
 
 int student1x1, student1x2, student1x3, student2x1, student2x2, student2x3;
 
@@ -63,6 +78,12 @@ unsigned long lastTick = 0;
 void setup() {
   // put your setup code here, to run once:
 
+    Serial.begin(9600);
+  pinMode(sensorPinIN,INPUT);
+  pinMode(sensorPinOUT,INPUT);
+
+  
+  
   display.begin();
   display.fillScreen(BLACK);
   
@@ -83,6 +104,57 @@ void setup() {
   
   setTime(13,50,00,19,11,2018);
 }
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+void door_sensors()
+{
+
+ //take analog input from both door sensors
+   sensorValueIN = analogRead(sensorPinIN);
+   sensorValueOUT = analogRead(sensorPinOUT);
+
+//---------------------------INNER SENSOR CONDITION--------------
+   //If Voltage for the Inner sensor is betweem 400 and 700 
+   if(sensorValueIN >=400 and sensorValueIN<700)
+       {
+                //print the voltage
+            Serial.println(sensorValueIN);
+                //add some delay to slow down the readings when a student passes
+            delay(2000);
+                // get the timing at which the student entered/cut the sensor
+            timerIN = millis();
+
+               
+            if(timerIN>timerOUT)
+               {        
+                     peopleCounter++;
+                     sprintf(buf, "Counter: %i", peopleCounter);
+                     Serial.println(buf);
+               }               
+       }
+//---------------------------OUTER SENSOR CONDITION-----
+     //If Voltage for the Outer sensor is betweem 400 and 700 
+    if(sensorValueOUT >=400 and sensorValueOUT<700)
+      { 
+              
+             Serial.println( sensorValueOUT);
+             delay(2000);
+             timerOUT = millis();
+
+
+            //if the timing of the outer sensor is greater than the timing of the inner one, that means that the student is leaving the classroom and the counter should be decremented
+            if(timerIN<timerOUT)
+               {       
+                peopleCounter--;     
+                sprintf(buf, "Counter: %i", peopleCounter);
+                Serial.println(buf); 
+                
+               }                 
+
+     }
+
+  
+} // end of the door method
+//---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void display_duration(int hour,int mins,int sec){
  display.fillScreen(BLACK);
   display.setCursor(0, 0);
@@ -101,7 +173,7 @@ void display_duration(int hour,int mins,int sec){
  display.print(0);
  display.print(sec); 
 }
-
+//------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void reset_timer_mode(){
   timer_mode=false;
     digitalWrite(buzzer_pin, 1);
@@ -109,7 +181,7 @@ void reset_timer_mode(){
     digitalWrite(buzzer_pin, 0);
   
 }
-
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void exam_mode(){
     current_hour=hour();
  current_minutes=minute();
@@ -157,7 +229,7 @@ void exam_mode(){
   
 }
 
-
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void notExamMode() {
   student1x1 = !digitalRead(student1x1Pin);
   student1x2 = !digitalRead(student1x2Pin);
@@ -196,7 +268,7 @@ void notExamMode() {
   digitalWrite(led2x1Pin, led2x1);
   digitalWrite(led2x2Pin, led2x2);
 }
-
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void displayNotExamMode() {
   int shift = 46;
   for(int i = people; i > 0; i /= 10) {
@@ -215,11 +287,11 @@ void displayNotExamMode() {
   display.fillRect(46,48, 8, 8, student2x2 ? RED : BLACK);
   display.fillRect(88,48, 8, 8, student2x3 ? RED : BLACK);
 }
-
+//---------------------------------------LOOP-------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void loop() {
   // put your main code here, to run repeatedly:
   
- 
+  door_sensors();
   notExamMode();
   displayNotExamMode();
 
