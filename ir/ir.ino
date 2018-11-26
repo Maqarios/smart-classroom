@@ -30,7 +30,7 @@ Adafruit_SSD1331 display = Adafruit_SSD1331(cs, dc, rst);
 #define student1x2Pin 45
 #define student1x3Pin 44
 #define student2x1Pin 43
-#define student2x2Pin 42
+#define student2x2Pin 42 
 #define student2x3Pin 41
 
 #define led1x1Pin 40
@@ -271,7 +271,7 @@ void notExamMode() {
 //----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 void displayNotExamMode() {
   int shift = 46;
-  for(int i = people; i > 0; i /= 10) {
+  for(int i = peopleCounter; i > 0; i /= 10) {
     shift -= 4;
   }
 
