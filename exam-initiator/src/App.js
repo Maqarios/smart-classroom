@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import './App.css';
 import axios from 'axios';
-const TUNNELED_URL = 'https://embedded-smart-classroom-2019.localtunnel.me';
+const TUNNELED_URL = 'https://embedded-smart-classroom-pikachuxam.localtunnel.me';
 const LOCAL_URL = 'http://localhost:8080';
 const API_URL = TUNNELED_URL;
 axios.defaults.headers.post['Access-Control-Allow-Origin'] = '*';
@@ -10,8 +10,8 @@ class App extends Component {
     name: 'Admin',
     password: 'password',
     startTime: '13:30',
-    hours: 0,
-    minutes: 0
+    hours: '0',
+    minutes: '0'
   }
 
 

@@ -1,13 +1,11 @@
-
-
-
-
 #include <TimeLib.h>
 #include <Time.h>
 #include <Adafruit_GFX.h>
 #include <gfxfont.h>
 #include <Adafruit_SSD1331.h>
 #include <SPI.h>
+#include <stdio.h>
+#include <string.h>
 
 #define sclk 52
 #define mosi 51
@@ -21,7 +19,7 @@
 #define GREEN           0x07E0
 #define CYAN            0x07FF
 #define MAGENTA         0xF81F
-#define YELLOW          0xFFE0  
+#define YELLOW          0xFFE0
 #define WHITE           0xFFFF
 
 Adafruit_SSD1331 display = Adafruit_SSD1331(cs, dc, rst);
@@ -46,115 +44,106 @@ int student1x1, student1x2, student1x3, student2x1, student2x2, student2x3;
 
 int led1x1, led1x2, led2x1, led2x2;
 
-int start_hour=13;
-int start_minutes=50;
-int start_seconds=0;
+int start_hour = 0;
+int start_minute = 0;
+int start_second = 0;
 int current_hour;
-int current_minutes;
-int current_seconds; 
-int duration_hours=0;
-int duration_minutes=0;
-int duration_seconds=5;
-
-bool timer_mode=false;
-bool not_exam_mode=true;
+int current_minute;
+int current_second;
+int duration_hour = 0;
+int duration_minute = 0;
+int duration_second = 0;
+bool sent_signal = false;
+bool started_exam = false;
 unsigned long lastTick = 0;
-
-void setup() {
-  // put your setup code here, to run once:
-
-  display.begin();
+int bufferSize = 100;
+char serialBuffer [100];
+char* bufferPointer = &(serialBuffer[0]);
+void display_duration(int hours, int mins, int secs) {
   display.fillScreen(BLACK);
-  
-  pinMode(student1x1Pin, INPUT);
-  pinMode(student1x2Pin, INPUT);
-  pinMode(student1x3Pin, INPUT);
-  pinMode(student2x1Pin, INPUT);
-  pinMode(student2x2Pin, INPUT);
-  pinMode(student2x3Pin, INPUT);
-
-  pinMode(led1x1Pin, OUTPUT);
-  pinMode(led1x2Pin, OUTPUT);
-  pinMode(led2x1Pin, OUTPUT);
-  pinMode(led2x2Pin, OUTPUT);
-
-  pinMode(buzzer_pin, OUTPUT);
-
-  
-  setTime(13,50,00,19,11,2018);
-}
-void display_duration(int hour,int mins,int sec){
- display.fillScreen(BLACK);
   display.setCursor(0, 0);
- display.setTextColor(WHITE);
- display.setTextSize(2);
- if(hour<10)
- display.print(0);
- display.print(hour);
- display.print(":");
-  if(mins<10)
- display.print(0);
- display.print(mins);
- display.print(" ");
- display.setTextSize(1);
-  if(sec<10)
- display.print(0);
- display.print(sec); 
+  display.setTextColor(WHITE);
+  display.setTextSize(2);
+  if (hours < 10)
+    display.print(0);
+  display.print(hours);
+  display.print(":");
+  if (mins < 10)
+    display.print(0);
+  display.print(mins);
+  display.print(" ");
+  display.setTextSize(1);
+  if (secs < 10)
+    display.print(0);
+  display.print(secs);
+  Serial.print(hours);
+  Serial.print(" ");
+  Serial.print(mins);
+  Serial.print(" ");
+  Serial.print(secs);
+  Serial.println();
 }
 
-void reset_timer_mode(){
-  timer_mode=false;
-    digitalWrite(buzzer_pin, 1);
-    delay(1000);
-    digitalWrite(buzzer_pin, 0);
-  
+void reset_timer_mode() {
+  started_exam = false;
+  sent_signal = false;
+  digitalWrite(buzzer_pin, 1);
+  delay(1000);
+  digitalWrite(buzzer_pin, 0);
+  display.fillScreen(BLACK);  
+  Serial.println("Finished exam, time to revise and cry for the rest of the day");
 }
 
-void exam_mode(){
-    current_hour=hour();
- current_minutes=minute();
- current_seconds=second();
- if(!timer_mode){
-  if(current_hour==start_hour){
-    if(current_minutes==start_minutes){
-      if(current_seconds==start_seconds){
-        timer_mode=true;
-        //timer.in(duration_total_seconds*1000, reset_timer_mode);
+void exam_mode() {
+  current_hour = hour();
+  current_minute = minute();
+  current_second = second();
+  if (!started_exam) {
+    if (current_hour == start_hour) {
+      if (current_minute == start_minute) {
+        if (current_second == start_second) {
+          started_exam = true;
+          digitalWrite(led1x1Pin,1);
+          digitalWrite(led1x2Pin,1);
+          digitalWrite(led2x1Pin,1);
+          digitalWrite(led2x2Pin,1);
+          Serial.println("Exam started, getting my bags");
+          //timer.in(duration_total_seconds*1000, reset_timer_mode);
+        }
       }
     }
-  }
- }else{
+  } else {
 
-  if(duration_seconds>0){
-    if(millis() - lastTick >=1000){
-      lastTick = millis();
-      duration_seconds--;
-      display_duration(duration_hours,duration_minutes,duration_seconds);
+    if (duration_second > 0) {
+      if (millis() - lastTick >= 1000) {
+        lastTick = millis();
+        duration_second--;
+        display_duration(duration_hour, duration_minute, duration_second);
+      }
+    }
+    if (duration_minute > 0) {
+      if (duration_second <= 0) {
+        duration_minute--;
+        duration_second = 60;
+
+
+      }
+    }
+    if (duration_hour > 0) {
+      if (duration_minute <= 0) {
+        duration_hour--;
+        duration_minute = 60;
+
+      }
+    }
+
+    if (duration_hour <= 0 && duration_minute <= 0 && duration_second <= 0) {
+
+      reset_timer_mode();
+
     }
   }
-  if(duration_minutes>0){
-    if(duration_seconds<=0){
-      duration_minutes--;
-      duration_seconds=60;
-     
 
-    }
-  }
-  if(duration_hours >0){
-    if(duration_minutes<=0){
-      duration_hours--;
-      duration_minutes=60;
-     
-    }
-  }
-
-  if(duration_hours<=0 && duration_minutes<=0 && duration_seconds<=0){
-    
-    reset_timer_mode();
-  
-  }
- }
-  
 }
 
 
@@ -183,7 +172,7 @@ void notExamMode() {
   if (!led1x1 & !led1x2)
     led1x1 = student1x2;
   if (!led2x1 & !led2x2) {
-    if(led1x2) {
+    if (led1x2) {
       led2x2 = student2x2;
     } else {
       led1x1 = led1x1 | student2x2;
@@ -199,28 +188,86 @@ void notExamMode() {
 
 void displayNotExamMode() {
   int shift = 46;
-  for(int i = people; i > 0; i /= 10) {
+  for (int i = people; i > 0; i /= 10) {
     shift -= 4;
   }
 
   display.setCursor(shift, 0);
   display.setTextColor(WHITE);
   display.setTextSize(2);
-  
 
-  display.fillRect(0,27, 8, 8, student1x1 ? RED : BLACK);
-  display.fillRect(46,27, 8, 8, student1x2 ? RED : BLACK);
-  display.fillRect(88,27, 8, 8, student1x3 ? RED : BLACK);
-  display.fillRect(0,48, 8, 8, student2x1 ? RED : BLACK);
-  display.fillRect(46,48, 8, 8, student2x2 ? RED : BLACK);
-  display.fillRect(88,48, 8, 8, student2x3 ? RED : BLACK);
+
+  display.fillRect(0, 27, 8, 8, student1x1 ? RED : GREEN);
+  display.fillRect(46, 27, 8, 8, student1x2 ? RED : GREEN);
+  display.fillRect(88, 27, 8, 8, student1x3 ? RED : GREEN);
+  display.fillRect(0, 48, 8, 8, student2x1 ? RED : GREEN);
+  display.fillRect(46, 48, 8, 8, student2x2 ? RED : GREEN);
+  display.fillRect(88, 48, 8, 8, student2x3 ? RED : GREEN);
 }
+
+void setup() {
+  // put your setup code here, to run once:
+
+  display.begin();
+  display.fillScreen(BLACK);
+
+  pinMode(student1x1Pin, INPUT);
+  pinMode(student1x2Pin, INPUT);
+  pinMode(student1x3Pin, INPUT);
+  pinMode(student2x1Pin, INPUT);
+  pinMode(student2x2Pin, INPUT);
+  pinMode(student2x3Pin, INPUT);
+
+  pinMode(led1x1Pin, OUTPUT);
+  pinMode(led1x2Pin, OUTPUT);
+  pinMode(led2x1Pin, OUTPUT);
+  pinMode(led2x2Pin, OUTPUT);
+
+  pinMode(buzzer_pin, OUTPUT);
+  Serial.begin(9600);
+  delay(200);
+  while (!Serial.available()) {
+    Serial.println("unavailable");// wait until time setting string is received;
+  }
+
+  if (Serial.available()) {
+    String current_year = Serial.readStringUntil(':');
+    String current_month = Serial.readStringUntil(':');
+    String current_day = Serial.readStringUntil(':');
+    String current_hour = Serial.readStringUntil(':');
+    String current_minute = Serial.readStringUntil(':');
+    String current_second = Serial.readStringUntil(':');
+    setTime(current_hour.toInt(), current_minute.toInt(), current_second.toInt(), current_day.toInt(), current_month.toInt(), current_year.toInt());
+  }
+
+  Serial.println("done with setup");
+
+}
+
 
 void loop() {
   // put your main code here, to run repeatedly:
-  
- 
-  notExamMode();
-  displayNotExamMode();
+  if (Serial.available()) {
+    String received_start_hour = Serial.readStringUntil(':');
+    String received_start_minute = Serial.readStringUntil(':');
+    String received_duration_hour = Serial.readStringUntil(':');
+    String received_duration_minute = Serial.readStringUntil(':');
+    Serial.println(received_start_hour + ":" + received_start_minute + "   " + received_duration_hour + ":" + received_duration_minute);
+    start_hour = received_start_hour.toInt();
+    start_minute = received_start_minute.toInt();
+    duration_hour = received_duration_hour.toInt();
+    duration_minute = received_duration_minute.toInt();
+    sent_signal = true;
+  }
+  if (sent_signal) {
+    //TODO: Add exam mode
+    exam_mode();
+  }
+
+  if (!started_exam) {
+    notExamMode();
+    displayNotExamMode();
+  }
+
 
 }
