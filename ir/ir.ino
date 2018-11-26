@@ -9,18 +9,18 @@
 
 #define sclk 52
 #define mosi 51
-#define cs   47
-#define rst  49
-#define dc   48
+#define cs 47
+#define rst 49
+#define dc 48
 // Color definitions
-#define BLACK           0x0000
-#define BLUE            0x001F
-#define RED             0xF800
-#define GREEN           0x07E0
-#define CYAN            0x07FF
-#define MAGENTA         0xF81F
-#define YELLOW          0xFFE0
-#define WHITE           0xFFFF
+#define BLACK 0x0000
+#define BLUE 0x001F
+#define RED 0xF800
+#define GREEN 0x07E0
+#define CYAN 0x07FF
+#define MAGENTA 0xF81F
+#define YELLOW 0xFFE0
+#define WHITE 0xFFFF
 
 Adafruit_SSD1331 display = Adafruit_SSD1331(cs, dc, rst);
 // Pin Naming Convention: <Type> + <Row> +  "x" + <Column> + "Pin"
@@ -38,7 +38,22 @@ Adafruit_SSD1331 display = Adafruit_SSD1331(cs, dc, rst);
 
 #define buzzer_pin 36
 
-int people = 0;
+//--------------DOOR SENSORS VARIABLES-----------------------------------
+int peopleCounter = 0;
+
+int sensorPinIN = A0;
+int sensorPinOUT = A1;
+int sensorValueIN = 0;
+int sensorValueOUT = 0;
+int counter = 0;
+int distanceSensorIN = 0;
+int distanceSensorOUT = 0;
+
+unsigned long timerIN = 0;
+unsigned long timerOUT = 0;
+
+char buf[100];
+//----------------------------------------------------------------------
 
 int student1x1, student1x2, student1x3, student2x1, student2x2, student2x3;
 
@@ -56,10 +71,9 @@ int duration_second = 0;
 bool sent_signal = false;
 bool started_exam = false;
 unsigned long lastTick = 0;
-int bufferSize = 100;
-char serialBuffer [100];
-char* bufferPointer = &(serialBuffer[0]);
-void display_duration(int hours, int mins, int secs) {
+
+void display_duration(int hours, int mins, int secs)
+{
   display.fillScreen(BLACK);
   display.setCursor(0, 0);
   display.setTextColor(WHITE);
@@ -84,70 +98,128 @@ void display_duration(int hours, int mins, int secs) {
   Serial.println();
 }
 
-void reset_timer_mode() {
+void door_sensors()
+{
+
+  //take analog input from both door sensors
+  sensorValueIN = analogRead(sensorPinIN);
+  sensorValueOUT = analogRead(sensorPinOUT);
+
+  //---------------------------INNER SENSOR CONDITION--------------
+  //If Voltage for the Inner sensor is betweem 400 and 700
+  if (sensorValueIN >= 400 and sensorValueIN < 700)
+  {
+    //print the voltage
+    Serial.println(sensorValueIN);
+    //add some delay to slow down the readings when a student passes
+    delay(2000);
+    // get the timing at which the student entered/cut the sensor
+    timerIN = millis();
+
+    if (timerIN > timerOUT)
+    {
+      peopleCounter++;
+      sprintf(buf, "Counter: %i", peopleCounter);
+      Serial.println(buf);
+    }
+  }
+  //---------------------------OUTER SENSOR CONDITION-----
+  //If Voltage for the Outer sensor is betweem 400 and 700
+  if (sensorValueOUT >= 400 and sensorValueOUT < 700)
+  {
+
+    Serial.println(sensorValueOUT);
+    delay(2000);
+    timerOUT = millis();
+
+    //if the timing of the outer sensor is greater than the timing of the inner one, that means that the student is leaving the classroom and the counter should be decremented
+    if (timerIN < timerOUT)
+    {
+      if(peopleCounter >0){
+        peopleCounter--;
+      }
+      sprintf(buf, "Counter: %i", peopleCounter);
+      Serial.println(buf);
+    }
+  }
+
+} // end of the door method
+
+void reset_timer_mode()
+{
   started_exam = false;
   sent_signal = false;
   digitalWrite(buzzer_pin, 1);
   delay(1000);
   digitalWrite(buzzer_pin, 0);
-  display.fillScreen(BLACK);  
+  display.fillScreen(BLACK);
   Serial.println("Finished exam, time to revise and cry for the rest of the day");
 }
 
-void exam_mode() {
+void exam_mode()
+{
   current_hour = hour();
   current_minute = minute();
   current_second = second();
-  if (!started_exam) {
-    if (current_hour == start_hour) {
-      if (current_minute == start_minute) {
-        if (current_second == start_second) {
+  if (!started_exam)
+  {
+    if (current_hour == start_hour)
+    {
+      if (current_minute == start_minute)
+      {
+        if (current_second == start_second)
+        {
           started_exam = true;
-          digitalWrite(led1x1Pin,1);
-          digitalWrite(led1x2Pin,1);
-          digitalWrite(led2x1Pin,1);
-          digitalWrite(led2x2Pin,1);
+          digitalWrite(led1x1Pin, 1);
+          digitalWrite(led1x2Pin, 1);
+          digitalWrite(led2x1Pin, 1);
+          digitalWrite(led2x2Pin, 1);
           Serial.println("Exam started, getting my bags");
           //timer.in(duration_total_seconds*1000, reset_timer_mode);
         }
       }
     }
-  } else {
+  }
+  else
+  {
 
-    if (duration_second > 0) {
-      if (millis() - lastTick >= 1000) {
+    if (duration_second > 0)
+    {
+      if (millis() - lastTick >= 1000)
+      {
         lastTick = millis();
         duration_second--;
         display_duration(duration_hour, duration_minute, duration_second);
       }
     }
-    if (duration_minute > 0) {
-      if (duration_second <= 0) {
+    if (duration_minute > 0)
+    {
+      if (duration_second <= 0)
+      {
         duration_minute--;
         duration_second = 60;
-
-
       }
     }
-    if (duration_hour > 0) {
-      if (duration_minute <= 0) {
+    if (duration_hour > 0)
+    {
+      if (duration_minute <= 0)
+      {
         duration_hour--;
         duration_minute = 60;
-
       }
     }
 
-    if (duration_hour <= 0 && duration_minute <= 0 && duration_second <= 0) {
+    if (duration_hour <= 0 && duration_minute <= 0 && duration_second <= 0)
+    {
 
       reset_timer_mode();
-
     }
   }
-
 }
 
-
-void notExamMode() {
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+void notExamMode()
+{
   student1x1 = !digitalRead(student1x1Pin);
   student1x2 = !digitalRead(student1x2Pin);
   student1x3 = !digitalRead(student1x3Pin);
@@ -171,10 +243,14 @@ void notExamMode() {
   // Middle
   if (!led1x1 & !led1x2)
     led1x1 = student1x2;
-  if (!led2x1 & !led2x2) {
-    if (led1x2) {
+  if (!led2x1 & !led2x2)
+  {
+    if (led1x2)
+    {
       led2x2 = student2x2;
-    } else {
+    }
+    else
+    {
       led1x1 = led1x1 | student2x2;
       led2x1 = student2x2;
     }
@@ -185,18 +261,19 @@ void notExamMode() {
   digitalWrite(led2x1Pin, led2x1);
   digitalWrite(led2x2Pin, led2x2);
 }
-
-void displayNotExamMode() {
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+void displayNotExamMode()
+{
   int shift = 46;
-  for (int i = people; i > 0; i /= 10) {
+    for (int i = peopleCounter; i > 0; i /= 10)
+    {
     shift -= 4;
   }
 
   display.setCursor(shift, 0);
   display.setTextColor(WHITE);
   display.setTextSize(2);
-
-
+  display.print(peopleCounter);
   display.fillRect(0, 27, 8, 8, student1x1 ? RED : GREEN);
   display.fillRect(46, 27, 8, 8, student1x2 ? RED : GREEN);
   display.fillRect(88, 27, 8, 8, student1x3 ? RED : GREEN);
@@ -205,32 +282,33 @@ void displayNotExamMode() {
   display.fillRect(88, 48, 8, 8, student2x3 ? RED : GREEN);
 }
 
-void setup() {
+void setup()
+{
   // put your setup code here, to run once:
-
+  Serial.begin(9600);
   display.begin();
   display.fillScreen(BLACK);
-
+  pinMode(sensorPinIN, INPUT);
+  pinMode(sensorPinOUT, INPUT);
   pinMode(student1x1Pin, INPUT);
   pinMode(student1x2Pin, INPUT);
   pinMode(student1x3Pin, INPUT);
   pinMode(student2x1Pin, INPUT);
   pinMode(student2x2Pin, INPUT);
   pinMode(student2x3Pin, INPUT);
-
   pinMode(led1x1Pin, OUTPUT);
   pinMode(led1x2Pin, OUTPUT);
   pinMode(led2x1Pin, OUTPUT);
   pinMode(led2x2Pin, OUTPUT);
-
   pinMode(buzzer_pin, OUTPUT);
-  Serial.begin(9600);
   delay(200);
-  while (!Serial.available()) {
-    Serial.println("unavailable");// wait until time setting string is received;
+  while (!Serial.available())
+  {
+    Serial.println("unavailable"); // wait until time setting string is received;
   }
 
-  if (Serial.available()) {
+  if (Serial.available())
+  {
     String current_year = Serial.readStringUntil(':');
     String current_month = Serial.readStringUntil(':');
     String current_day = Serial.readStringUntil(':');
@@ -241,13 +319,13 @@ void setup() {
   }
 
   Serial.println("done with setup");
-
 }
 
-
-void loop() {
+void loop()
+{
   // put your main code here, to run repeatedly:
-  if (Serial.available()) {
+  if (Serial.available())
+  {
     String received_start_hour = Serial.readStringUntil(':');
     String received_start_minute = Serial.readStringUntil(':');
     String received_duration_hour = Serial.readStringUntil(':');
@@ -259,15 +337,17 @@ void loop() {
     duration_minute = received_duration_minute.toInt();
     sent_signal = true;
   }
-  if (sent_signal) {
+  if (sent_signal)
+  {
     //TODO: Add exam mode
     exam_mode();
   }
 
-  if (!started_exam) {
+  if (!started_exam)
+  {
+    door_sensors();
     notExamMode();
     displayNotExamMode();
   }
-
 
 }
