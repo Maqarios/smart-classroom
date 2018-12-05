@@ -40,7 +40,7 @@ Adafruit_SSD1331 display = Adafruit_SSD1331(cs, dc, rst);
 
 int student1x1, student1x2, student1x3, student2x1, student2x2, student2x3;
 int led1x1, led1x2, led2x1, led2x2;
-int peopleCounter;
+int prevPeopleCounter, peopleCounter;
 
 int start_hour = 0;
 int start_minute = 0;
@@ -168,6 +168,7 @@ void notExamMode()
   led2x1 = 0;
   led2x2 = 0;
 
+  prevPeopleCounter = peopleCounter;
   peopleCounter = student1x1 + student1x2 + student1x3 + student2x1 + student2x2 + student2x3;
 
   // Left
@@ -208,6 +209,8 @@ void displayNotExamMode()
     shift -= 4;
   }
 
+  if (prevPeopleCounter != peopleCounter)
+    display.fillRect(0, 0, 100, 15, BLACK);
   display.setCursor(shift, 0);
   display.setTextColor(WHITE);
   display.setTextSize(2);
