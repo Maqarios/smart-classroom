@@ -38,26 +38,9 @@ Adafruit_SSD1331 display = Adafruit_SSD1331(cs, dc, rst);
 
 #define buzzer_pin 36
 
-//--------------DOOR SENSORS VARIABLES-----------------------------------
-int peopleCounter = 0;
-
-int sensorPinIN = A0;
-int sensorPinOUT = A1;
-int sensorValueIN = 0;
-int sensorValueOUT = 0;
-int counter = 0;
-int distanceSensorIN = 0;
-int distanceSensorOUT = 0;
-
-unsigned long timerIN = 0;
-unsigned long timerOUT = 0;
-
-char buf[100];
-//----------------------------------------------------------------------
-
 int student1x1, student1x2, student1x3, student2x1, student2x2, student2x3;
-
 int led1x1, led1x2, led2x1, led2x2;
+int peopleCounter;
 
 int start_hour = 0;
 int start_minute = 0;
@@ -97,53 +80,6 @@ void display_duration(int hours, int mins, int secs)
   Serial.print(secs);
   Serial.println();
 }
-
-void door_sensors()
-{
-
-  //take analog input from both door sensors
-  sensorValueIN = analogRead(sensorPinIN);
-  sensorValueOUT = analogRead(sensorPinOUT);
-
-  //---------------------------INNER SENSOR CONDITION--------------
-  //If Voltage for the Inner sensor is betweem 400 and 700
-  if (sensorValueIN >= 400 and sensorValueIN < 700)
-  {
-    //print the voltage
-    Serial.println(sensorValueIN);
-    //add some delay to slow down the readings when a student passes
-    delay(2000);
-    // get the timing at which the student entered/cut the sensor
-    timerIN = millis();
-
-    if (timerIN > timerOUT)
-    {
-      peopleCounter++;
-      sprintf(buf, "Counter: %i", peopleCounter);
-      Serial.println(buf);
-    }
-  }
-  //---------------------------OUTER SENSOR CONDITION-----
-  //If Voltage for the Outer sensor is betweem 400 and 700
-  if (sensorValueOUT >= 400 and sensorValueOUT < 700)
-  {
-
-    Serial.println(sensorValueOUT);
-    delay(2000);
-    timerOUT = millis();
-
-    //if the timing of the outer sensor is greater than the timing of the inner one, that means that the student is leaving the classroom and the counter should be decremented
-    if (timerIN < timerOUT)
-    {
-      if(peopleCounter >0){
-        peopleCounter--;
-      }
-      sprintf(buf, "Counter: %i", peopleCounter);
-      Serial.println(buf);
-    }
-  }
-
-} // end of the door method
 
 void reset_timer_mode()
 {
@@ -232,6 +168,8 @@ void notExamMode()
   led2x1 = 0;
   led2x2 = 0;
 
+  peopleCounter = student1x1 + student1x2 + student1x3 + student2x1 + student2x2 + student2x3;
+
   // Left
   led1x1 = student1x1 | student2x1;
   led2x1 = student2x1;
@@ -288,8 +226,6 @@ void setup()
   Serial.begin(9600);
   display.begin();
   display.fillScreen(BLACK);
-  pinMode(sensorPinIN, INPUT);
-  pinMode(sensorPinOUT, INPUT);
   pinMode(student1x1Pin, INPUT);
   pinMode(student1x2Pin, INPUT);
   pinMode(student1x3Pin, INPUT);
@@ -345,7 +281,6 @@ void loop()
 
   if (!started_exam)
   {
-    door_sensors();
     notExamMode();
     displayNotExamMode();
   }
